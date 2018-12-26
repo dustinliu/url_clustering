@@ -1,18 +1,9 @@
 import os
-import sys
 import pickle
+import sys
 
 
-class Singleton(type):
-    _instance = None
-
-    def __call__(self, *args, **kwargs):
-        if not self._instance :
-            self._instance = super(Singleton, self).__call__(*args, **kwargs)
-        return self._instance
-
-
-class Dictionary(metaclass=Singleton):
+class Dictionary:
     idx_set = set()
 
     def __init__(self):
