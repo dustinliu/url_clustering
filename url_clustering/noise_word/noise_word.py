@@ -1,24 +1,39 @@
+import sys
+
 import numpy as np
 
 from url_clustering.noise_word.dictionary import Dictionary
+
+
+def digit_ratio(word):
+    if len(word) == 0:
+        return 0
+
+    digit_count = 0
+    for c in word:
+        if '0' <= c <= '9':
+            digit_count += 1
+    return digit_count / len(word)
 
 
 class NoiseWordDetector:
     dict_ = Dictionary()
 
     def __init__(self, max_len=200, min_len=0):
-        self.max_len = max_len
-        self.min_len = min_len
+        self._max_len = max_len
+        self._min_len = min_len
 
     def is_noise_word(self, word):
-        if not self.min_len < len(word) < self.max_len:
+        if not self._min_len < len(word) < self._max_len:
             return True
 
-        sample = word.lower()
-        if sample in self.dict_:
+        if word.lower() in self.dict_:
             return False
 
         return True
+
+    def fit(self, samples):
+        pass
 
     def _extract_features(self, words):
         features = []
@@ -27,19 +42,13 @@ class NoiseWordDetector:
 
         return features
 
-    @staticmethod
-    def _digit_ratio(word):
-        if len(word) == 0:
-            return 0
-
-        digit_count = 0
-        for c in word:
-            if '0' <= c <= '9':
-                digit_count += 1
-        return digit_count / len(word)
 
     def _readability(self, word):
-        return sum([len(token) for token in self._tokenize(word)]) / len(word)
+        len_ = 0
+        for token in self._tokenize(word):
+            len_ += len(token)
+
+        return len_ / len(word)
 
     def _tokenize(self, word):
         tokens = []
@@ -56,7 +65,3 @@ class NoiseWordDetector:
                     break
             i += 1
         return tokens
-
-
-if __name__ == '__main__':
-    pass
