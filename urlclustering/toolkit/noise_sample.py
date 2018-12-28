@@ -1,11 +1,12 @@
 import argparse
-import csv
 import sys
 from urllib.parse import urlparse
 
+from urlclustering.toolkit.storage import Storage
+
 
 def process_url(inputfile):
-    result = {}
+    samples_dict = {}
     total = 0
     for url in inputfile:
         line = url = url.strip()
@@ -13,17 +14,19 @@ def process_url(inputfile):
             line = line[1:]
 
         for word in urlparse(line).path.split("/"):
-            if word in result:
-                result[word][1] += 1
+            if word in samples_dict:
+                samples_dict[word][1] += 1
             else:
-                result[word] = [url, 1]
+                samples_dict[word] = [url, 1]
 
         total += 1
 
-    writer = csv.writer(sys.stdout, delimiter='\t')
-    writer.writerow(['word', 'url', 'frequency', 'amount'])
-    for word in result.keys():
-        writer.writerow([word, result[word][0], result[word][1]/total, result[word][1]])
+    samples = []
+    for word in samples_dict.keys():
+        value = samples_dict[word]
+        samples.append([word, value[0], value[1]/total, value[1]])
+
+    Storage().batch_write_raw_data(samples)
 
 
 if __name__ == '__main__':
