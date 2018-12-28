@@ -1,8 +1,12 @@
+import sys
 from builtins import len
+
+import argparse
+from urllib.parse import urlparse
 
 import numpy as np
 
-from url_clustering.dictionary import Dictionary
+from urlclustering.dictionary import Dictionary
 
 
 def digit_ratio(word):
@@ -19,7 +23,7 @@ def digit_ratio(word):
 class NoiseWordDetector:
     dict_ = Dictionary()
 
-    def __init__(self, max_len=200, min_len=0):
+    def __init__(self, project_dir='.', max_len=200, min_len=0):
         self._max_len = max_len
         self._min_len = min_len
 
@@ -38,7 +42,7 @@ class NoiseWordDetector:
     def _extract_features(self, words):
         features = []
         for word in [w.lower() for w in words]:
-            features.append(np.array([len(word), self._digit_ratio(word), self._readability(word)]))
+            features.append(np.array([len(word), digit_ratio(word), self._readability(word)]))
 
         return features
 
@@ -65,3 +69,9 @@ class NoiseWordDetector:
                     break
             i += 1
         return tokens
+
+
+
+
+if __name__ == '__main__':
+    pass

@@ -1,7 +1,7 @@
 import sys
 
-from url_clustering.feature import tokenize
-from url_clustering.report import log_report
+from urlclustering.feature import tokenize
+from urlclustering.report import log_report
 
 
 class ForwardClustering:

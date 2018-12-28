@@ -7,8 +7,8 @@ from sklearn import cluster, metrics
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.feature_extraction.text import CountVectorizer
 
-from url_clustering.feature import tokenize
-from url_clustering.report import log_report
+from urlclustering.feature import tokenize
+from urlclustering.report import log_report
 
 
 class KmeanClustering:

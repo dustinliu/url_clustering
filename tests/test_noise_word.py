@@ -1,5 +1,5 @@
 from tests.utils import compare_list
-from url_clustering.noise_word import NoiseWordDetector
+from urlclustering.noise_word import NoiseWordDetector
 
 
 class TestNoiseWord:
