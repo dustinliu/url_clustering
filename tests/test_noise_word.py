@@ -1,16 +1,20 @@
 from tests.utils import compare_list
-from urlclustering.noise_word import NoiseWordDetector
+from urlclustering.noise_word import NoiseWordDetector, digit_ratio
+from urlclustering.storage import Sample
 
 
 class TestNoiseWord:
     def test_digit_ratio(self):
-        assert NoiseWordDetector._digit_ratio("a1b0") == 0.5
-        assert NoiseWordDetector._digit_ratio('ab75685794') == 0.8
+        assert digit_ratio("a1b0") == 0.5
+        assert digit_ratio('ab75685794') == 0.8
+        assert digit_ratio('92') == 1
 
     def test_is_noise_word(self):
         assert NoiseWordDetector().is_noise_word("user") == False
-        assert NoiseWordDetector(min_len=10).is_noise_word("user") == True
-        assert NoiseWordDetector(max_len=3).is_noise_word("user") == True
+
+    def test_pos(self):
+        sample = Sample(word='v1', url='/v1/test/get')
+        assert NoiseWordDetector()._pos(sample) == 0
 
     def test_tokenize(self):
         assert compare_list(NoiseWordDetector()._tokenize("paymentuser"), ['payment', 'user'])
