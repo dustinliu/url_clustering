@@ -1,10 +1,13 @@
 import pickle
+from collections import Counter
 
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn import svm
+import pylab
+from imblearn.combine import SMOTEENN
 from sklearn.metrics import average_precision_score, precision_recall_curve
 from sklearn.model_selection import train_test_split
+from sklearn.neural_network import MLPClassifier
 from sklearn.utils.fixes import signature
 
 from urlclustering.dictionary import Dictionary
@@ -25,7 +28,7 @@ class NoiseWordDetector:
         return True
 
     def fit(self, x, y):
-        self._clf = svm.LinearSVC()
+        self._clf = MLPClassifier(alpha=1)
         self._clf.fit(x, y)
 
     # def predict(self, url, word):
@@ -85,30 +88,41 @@ def digit_ratio(word):
 
 
 if __name__ == '__main__':
-    x = []
+    X = []
     y = []
     print('gathering training data')
     with create_session() as session:
         for sample in session.query(Sample).filter(Sample.label != None):
-            x.append(pickle.loads(sample.features))
+            X.append(pickle.loads(sample.features))
             y.append(int(sample.label))
 
+    X = np.array(X)
+    y = np.array(y)
+
+    print(f'Original dataset shape {Counter(y)}')
+    print('resampling by smote')
+    # sm = SMOTE(random_state=42)
+    sm = SMOTEENN(random_state=0)
+    X_res, y_res = sm.fit_resample(X, y)
+    print(f'Resampled dataset shape {Counter(y_res)}')
+
     print('splitting training and test data')
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25)
+    X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.25)
 
     print('training')
     detector = NoiseWordDetector()
-    detector.fit(x_train, y_train)
+    detector.fit(X_train, y_train)
 
     print('analyze result')
-    y_score = detector.predict(x_test)
+    y_score = detector.predict(X_test)
     average_precision = average_precision_score(y_test, y_score)
     print(f'Average precision-recall score: {average_precision:0.2f}')
     precision, recall, _ = precision_recall_curve(y_test, y_score)
+    print(f'precision {precision}')
+    print(f'recall{recall}')
 
     step_kwargs = ({'step': 'post'} if 'step' in signature(plt.fill_between).parameters else {})
-    plt.step(recall, precision, color='b', alpha=0.2,
-             where='post')
+    plt.step(recall, precision, color='b', alpha=0.2, where='post')
     plt.fill_between(recall, precision, alpha=0.2, color='b', **step_kwargs)
 
     plt.xlabel('Recall')
@@ -116,6 +130,8 @@ if __name__ == '__main__':
     plt.ylim([0.0, 1.05])
     plt.xlim([0.0, 1.0])
     plt.title('2-class Precision-Recall curve: AP={0:0.2f}'.format(average_precision))
+
+    pylab.show()
 
 
 
