@@ -1,17 +1,16 @@
-import pickle
 from collections import Counter
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import pylab
-from imblearn.combine import SMOTEENN
+from imblearn.over_sampling import SMOTE
 from sklearn.metrics import average_precision_score, precision_recall_curve
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils.fixes import signature
 
 from urlclustering.dictionary import Dictionary
-from urlclustering.storage import create_session, Sample
 from urlclustering.utils import tokenize_url
 
 
@@ -42,11 +41,9 @@ class NoiseWordDetector:
     def extract_features(self, word, url):
         # pos, length, readability, digital_ratio
         word = word.lower()
-        return np.array(
-            [self._pos(url, word), len(word), self._readability(word), digit_ratio(word)]
-        )
+        return (self._pos(word, url), len(word), self._readability(word), digit_ratio(word))
 
-    def _pos(self, url, word):
+    def _pos(self, word, url):
         tokens = tokenize_url(url)
         return tokens.index(word) / len(tokens)
 
@@ -57,13 +54,14 @@ class NoiseWordDetector:
         len_ = 0
         for token in self._tokenize(word):
             len_ += len(token)
-
         return len_ / len(word)
+
+
     def _tokenize(self, word):
         tokens = []
         word_len = len(word)
         i = 0
-        while i < word_len - 3:
+        while i <= word_len - 3:
             token_len = word_len - i
             pos = 45 if token_len > 45 else token_len  # the length of the longest english word is 45
             for j in range(pos, 2, -1):
@@ -75,9 +73,12 @@ class NoiseWordDetector:
             i += 1
         return tokens
 
-
 def digit_ratio(word):
-    if len(word) == 0:
+    try:
+        if word == None or len(word) == 0:
+            return 0
+    except TypeError:
+        print(f'type error: {word}, type: {type(word)}')
         return 0
 
     digit_count = 0
@@ -91,18 +92,18 @@ if __name__ == '__main__':
     X = []
     y = []
     print('gathering training data')
-    with create_session() as session:
-        for sample in session.query(Sample).filter(Sample.label != None):
-            X.append(pickle.loads(sample.features))
-            y.append(int(sample.label))
+    samples = pd.read_csv('data/samples.csv', sep='\t', index_col=0)
+    for index, sample in samples.iterrows():
+        X.append(sample.feature)
+        y.append(int(sample.label))
 
     X = np.array(X)
     y = np.array(y)
 
     print(f'Original dataset shape {Counter(y)}')
     print('resampling by smote')
-    # sm = SMOTE(random_state=42)
-    sm = SMOTEENN(random_state=0)
+    sm = SMOTE(random_state=42)
+    # sm = SMOTEENN(random_state=0)
     X_res, y_res = sm.fit_resample(X, y)
     print(f'Resampled dataset shape {Counter(y_res)}')
 
@@ -132,10 +133,3 @@ if __name__ == '__main__':
     plt.title('2-class Precision-Recall curve: AP={0:0.2f}'.format(average_precision))
 
     pylab.show()
-
-
-
-    # while(True):
-    #     url = input('url: ')
-    #     word = input('word: ')
-    #     print(detector.predict(url, word))

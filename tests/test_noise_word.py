@@ -1,6 +1,7 @@
+import pytest
+
 from tests.utils import compare_list
 from urlclustering.noise_word import NoiseWordDetector, digit_ratio
-from urlclustering.storage import Sample
 
 
 class TestNoiseWord:
@@ -13,8 +14,7 @@ class TestNoiseWord:
         assert NoiseWordDetector().is_noise_word("user") == False
 
     def test_pos(self):
-        sample = Sample(word='v1', url='/v1/test/get')
-        assert NoiseWordDetector()._pos(sample) == 0
+        assert NoiseWordDetector()._pos('v1', '/v1/test/get') == 0
 
     def test_tokenize(self):
         assert compare_list(NoiseWordDetector()._tokenize("paymentuser"), ['payment', 'user'])
@@ -26,7 +26,6 @@ class TestNoiseWord:
         assert compare_list(NoiseWordDetector()._tokenize("paymentgateway"), ['payment', 'gateway'])
 
     def test_readability(self):
-        assert NoiseWordDetector()._readability("payment") == 1
-        assert NoiseWordDetector()._readability("paymentdlaoiek") == 0.5
-        assert NoiseWordDetector()._readability("paymentdlaoieklaqeuser") == 0.5
+        assert NoiseWordDetector()._readability("env.default") == pytest.approx(0.909090909090)
+        assert NoiseWordDetector()._readability(".env") == pytest.approx(0.75)
 
