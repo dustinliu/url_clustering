@@ -1,12 +1,12 @@
 import pytest
 
 from tests.utils import compare_list
-from urlclustering.noise_feature import pos, tokenize, readability, digit_ratio
-from urlclustering.noise_word import NoiseWordDetector
+from urlclustering.noise_feature import pos, tokenize, readability, digit_ratio, special_char_ratio
 
 
 class TestNoiseWord:
     def test_digit_ratio(self):
+
         assert digit_ratio("a1b0") == 0.5
         assert digit_ratio('ab75685794') == 0.8
         assert digit_ratio('92') == 1
@@ -28,3 +28,8 @@ class TestNoiseWord:
         assert readability(".env") == pytest.approx(0.75)
         assert readability("api") == pytest.approx(1)
 
+    def test_special_char_ratio(self):
+        assert special_char_ratio("a%") == pytest.approx(0.5)
+        assert special_char_ratio("z_") == pytest.approx(0)
+        assert special_char_ratio("0-") == pytest.approx(0)
+        assert special_char_ratio("9+") == pytest.approx(0.5)
