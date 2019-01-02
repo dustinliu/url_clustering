@@ -15,7 +15,6 @@ from urlclustering.toolkit.noise_sample import read_sample
 
 
 class NoiseWordDetector:
-
     def __init__(self):
         self._clf = LogisticRegression(random_state=13, solver='liblinear')
 
@@ -33,22 +32,29 @@ def transform_feature(samples):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('inputfile', nargs='?', type=argparse.FileType('r'), default=sys.stdin, help='input file name')
+    parser.add_argument('trainingfile', nargs='?', type=argparse.FileType('r'), default=sys.stdin,
+                        help='training file name')
+    parser.add_argument('testfile', nargs='?', type=argparse.FileType('r'), help='test file name')
     args = parser.parse_args()
 
-    print('gathering training data')
-    samples = read_sample(args.inputfile)
-    X, y = transform_feature(samples)
+    print('collecting training data')
+    samples = read_sample(args.trainingfile)
+    X_train, y_train = transform_feature(samples)
 
-    print(f'Original dataset shape {Counter(y)}')
+    print(f'Original dataset shape {Counter(y_train)}')
     print('resampling by smote')
     sm = SMOTE(random_state=42)
-    # sm = SMOTEENN(random_state=0)
-    X_res, y_res = sm.fit_resample(X, y)
+    X_res, y_res = sm.fit_resample(X_train, y_train)
     print(f'Resampled dataset shape {Counter(y_res)}')
 
-    print('splitting training and test data')
-    X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.25)
+    if args.testfile:
+        print("collecting test data")
+        samples = read_sample(args.testfile)
+        X_test, y_test = transform_feature(samples)
+    else:
+        print("no test data given, split from training data")
+        X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.25)
+
 
     print('training')
     detector = NoiseWordDetector()

@@ -6,7 +6,7 @@ dict_ = Dictionary()
 
 def pos(word, url):
     tokens = tokenize_url(url)
-    return tokens.index(word) / len(tokens)
+    return tokens.index(word) / (len(tokens) - 1)
 
 
 def tokenize(word):
@@ -24,6 +24,15 @@ def tokenize(word):
                 break
         i += 1
     return tokens
+
+
+def special_char_ratio(word):
+    len_ = 0
+    for c in word.lower():
+        if not 'a' <= c <= 'z' and not '0' <= c <= '9' and c != '_' and c != '-':
+            len_ += 1
+
+    return len_ / len(word)
 
 
 def readability(word):
