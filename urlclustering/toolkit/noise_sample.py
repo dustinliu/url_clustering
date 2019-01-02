@@ -4,7 +4,7 @@ import time
 
 import pandas as pd
 
-from urlclustering.noise_word import NoiseWordDetector
+from urlclustering.noise_feature import extract_features
 from urlclustering.utils import tokenize_url
 
 pd_columns = ['word', 'url', 'frequency', 'amount', 'position', 'length', 'readability', 'digital_ratio', 'label']
@@ -41,13 +41,12 @@ def process_raw_samples(inputfile, outputfile):
     print('processing samples, 100% complete')
 
     samples = []
-    detector = NoiseWordDetector()
     i = 0
     data_len = len(samples_dict)
     print('extracting features, 0% complete', end='\r')
     for word in samples_dict.keys():
         value = samples_dict[word]
-        feature = detector.extract_features(word, value[0])
+        feature = extract_features(word, value[0])
         samples.append([word, value[0], value[1]/total, value[1],
                         feature[0], feature[1], feature[2], feature[3], None])
         i += 1
@@ -59,19 +58,16 @@ def process_raw_samples(inputfile, outputfile):
     write_sample(pd.DataFrame(samples, columns=pd_columns), outputfile)
 
 
-def update_all_features(file):
-    detector = NoiseWordDetector()
-    samples = read_sample(file)
-    samples['feature'] = samples.apply(lambda row: detector.extract_features(row['word'], row['url']), axis=1)
-    write_sample(samples, file)
+def update_all_features(infile, outfile):
+    samples = read_sample(infile)
+    samples['feature'] = samples.apply(lambda row: extract_features(row['word'], row['url']), axis=1)
+    write_sample(samples, outfile)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--update_feature', action='store_true', default=False,
-                        help='update feature')
-    parser.add_argument('inputfile', nargs='?', type=argparse.FileType('r'),
-                        default=sys.stdin, help='input file name')
+    parser.add_argument('--update_feature', action='store_true', default=False, help='update feature')
+    parser.add_argument('inputfile', nargs='?', type=argparse.FileType('r'), default=sys.stdin, help='input file name')
     parser.add_argument('outputfile', nargs='?', type=argparse.FileType('w'),
                         default=sys.stdout, help='output file name')
 
@@ -79,7 +75,7 @@ if __name__ == '__main__':
 
     action = None
     if args.update_feature:
-        def action(): update_all_features()
+        def action(): update_all_features(args.inputfile, args.outputfile)
     else:
         def action(): process_raw_samples(args.inputfile, args.outputfile)
 

@@ -1,107 +1,44 @@
+import argparse
+import sys
 from collections import Counter
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import pylab
 from imblearn.over_sampling import SMOTE
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, precision_recall_curve
 from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPClassifier
 from sklearn.utils.fixes import signature
 
-from urlclustering.dictionary import Dictionary
 from urlclustering.toolkit.noise_sample import read_sample
-from urlclustering.utils import tokenize_url
 
 
 class NoiseWordDetector:
-    dict_ = Dictionary()
 
     def __init__(self):
-        self._clf = None
-
-    def is_noise_word(self, word):
-        if word.lower() in self.dict_:
-            return False
-
-        return True
+        self._clf = LogisticRegression(random_state=13, solver='liblinear')
 
     def fit(self, x, y):
-        self._clf = LogisticRegression(random_state=13)
-        # self._clf = MLPClassifier(alpha=1)
         self._clf.fit(x, y)
-
-    # def predict(self, url, word):
-    #     feature = self.extract_features(word, url)
-    #     print(feature)
-    #     return self._clf.predict([feature])
 
     def predict(self, x):
         return self._clf.predict(x)
 
-    def extract_features(self, word, url):
-        # pos, length, readability, digital_ratio
-        word = word.lower()
-        return (self._pos(word, url), len(word), self._readability(word), digit_ratio(word))
 
-    def _pos(self, word, url):
-        tokens = tokenize_url(url)
-        return tokens.index(word) / len(tokens)
-
-    def _readability(self, word):
-        if len(word) == 0:
-            return 1
-
-        len_ = 0
-        for token in self._tokenize(word):
-            len_ += len(token)
-        return len_ / len(word)
-
-
-    def _tokenize(self, word):
-        tokens = []
-        word_len = len(word)
-        i = 0
-        while i <= word_len - 3:
-            token_len = word_len - i
-            pos = 45 if token_len > 45 else token_len  # the length of the longest english word is 45
-            for j in range(pos, 2, -1):
-                token = word[i:i+j]
-                if token in self.dict_:
-                    tokens.append(token)
-                    i += len(token) - 1
-                    break
-            i += 1
-        return tokens
-
-def digit_ratio(word):
-    try:
-        if word == None or len(word) == 0:
-            return 0
-    except TypeError:
-        print(f'type error: {word}, type: {type(word)}')
-        return 0
-
-    digit_count = 0
-    for c in word:
-        if '0' <= c <= '9':
-            digit_count += 1
-    return digit_count / len(word)
+def transform_feature(samples):
+    return np.array(samples[['position', 'length', 'readability', 'digital_ratio']].values.tolist()), \
+           np.array(samples['label'].values.tolist())
 
 
 if __name__ == '__main__':
-    X = []
-    y = []
-    print('gathering training data')
-    samples = read_sample('data/samples.csv')
-    for index, sample in samples.iterrows():
-        X.append([sample['position'],sample.length,sample.readability,sample.digital_ratio])
-        y.append(int(sample.label))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('inputfile', nargs='?', type=argparse.FileType('r'), default=sys.stdin, help='input file name')
+    args = parser.parse_args()
 
-    X = np.array(X)
-    y = np.array(y)
+    print('gathering training data')
+    samples = read_sample(args.inputfile)
+    X, y = transform_feature(samples)
 
     print(f'Original dataset shape {Counter(y)}')
     print('resampling by smote')
@@ -136,3 +73,8 @@ if __name__ == '__main__':
     plt.title('2-class Precision-Recall curve: AP={0:0.2f}'.format(average_precision))
 
     pylab.show()
+
+    # while(True):
+    #     url = input('url: ')
+    #     word = input('word: ')
+    #     print(f'{detector.predict([extract_features(word, url)])}')
