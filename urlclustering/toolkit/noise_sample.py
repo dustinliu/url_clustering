@@ -11,11 +11,11 @@ pd_columns = ['word', 'url', 'frequency', 'amount', 'position', 'length', 'reada
 
 
 def write_sample(samples, file):
-    samples.to_csv(file, sep='\t')
+    samples.to_csv(file, sep='\t', index=False)
 
 
 def read_sample(file):
-    return pd.read_csv(file, sep='\t', index_col=0)
+    return pd.read_csv(file, sep='\t', index_col=False)
 
 
 def process_raw_samples(inputfile, outputfile):
@@ -63,14 +63,12 @@ def update_all_features(file):
     detector = NoiseWordDetector()
     samples = read_sample(file)
     samples['feature'] = samples.apply(lambda row: detector.extract_features(row['word'], row['url']), axis=1)
-    write_sample(file)
+    write_sample(samples, file)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--truncate', action='store_true', default=False,
-                        help='truncate all data before processing')
-    parser.add_argument('--feature', action='store_true', default=False,
+    parser.add_argument('--update_feature', action='store_true', default=False,
                         help='update feature')
     parser.add_argument('inputfile', nargs='?', type=argparse.FileType('r'),
                         default=sys.stdin, help='input file name')
@@ -80,7 +78,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     action = None
-    if args.feature:
+    if args.update_feature:
         def action(): update_all_features()
     else:
         def action(): process_raw_samples(args.inputfile, args.outputfile)

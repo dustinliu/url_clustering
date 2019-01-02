@@ -5,12 +5,14 @@ import numpy as np
 import pandas as pd
 import pylab
 from imblearn.over_sampling import SMOTE
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, precision_recall_curve
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils.fixes import signature
 
 from urlclustering.dictionary import Dictionary
+from urlclustering.toolkit.noise_sample import read_sample
 from urlclustering.utils import tokenize_url
 
 
@@ -27,7 +29,8 @@ class NoiseWordDetector:
         return True
 
     def fit(self, x, y):
-        self._clf = MLPClassifier(alpha=1)
+        self._clf = LogisticRegression(random_state=13)
+        # self._clf = MLPClassifier(alpha=1)
         self._clf.fit(x, y)
 
     # def predict(self, url, word):
@@ -92,9 +95,9 @@ if __name__ == '__main__':
     X = []
     y = []
     print('gathering training data')
-    samples = pd.read_csv('data/samples.csv', sep='\t', index_col=0)
+    samples = read_sample('data/samples.csv')
     for index, sample in samples.iterrows():
-        X.append(sample.feature)
+        X.append([sample['position'],sample.length,sample.readability,sample.digital_ratio])
         y.append(int(sample.label))
 
     X = np.array(X)
