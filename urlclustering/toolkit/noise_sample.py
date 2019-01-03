@@ -66,22 +66,15 @@ def update_all_features(infile, outfile):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--update_feature', action='store_true', default=False, help='update feature')
     parser.add_argument('inputfile', nargs='?', type=argparse.FileType('r'), default=sys.stdin, help='input file name')
     parser.add_argument('outputfile', nargs='?', type=argparse.FileType('w'),
                         default=sys.stdout, help='output file name')
 
     args = parser.parse_args()
 
-    action = None
-    if args.update_feature:
-        def action(): update_all_features(args.inputfile, args.outputfile)
-    else:
-        def action(): process_raw_samples(args.inputfile, args.outputfile)
-
     start = time.time()
     try:
-        action()
+        process_raw_samples(args.inputfile, args.outputfile)
     finally:
         args.inputfile.close()
 

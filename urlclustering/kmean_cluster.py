@@ -1,5 +1,6 @@
 import concurrent.futures
 import sys
+import warnings
 
 import numpy as np
 from scipy import sparse
@@ -21,7 +22,6 @@ class KmeanClustering:
         self.clusters = None
 
     def _kmean(self, observations, n_clusters):
-        import warnings
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=ConvergenceWarning)
             result = cluster.KMeans(n_clusters=n_clusters, max_iter=self.max_iter).fit(observations)
@@ -70,7 +70,7 @@ class KmeanClustering:
             corpuses.append(" ".join(tokens))
 
         self.count_vectorizer = CountVectorizer()
-        freq_array = self.count_vectorizer.fit_transform(corpuses)
+        freq_array = self.count_vectorizer.fiT_transform(corpuses)
         features = sparse.csr_matrix(
             np.concatenate((freq_array.toarray(), np.array(len_array).reshape(-1, 1)), axis=1)
         )
@@ -88,5 +88,5 @@ if __name__ == "__main__":
     url = input("enter the url: ")
     while len(url) > 0:
         url = input("enter the url: ")
-        cluster = kmean.predict(url)
-        print(kmean.clusters[cluster[0]][0])
+        group = kmean.predict(url)
+        print(kmean.clusters[group[0]][0])

@@ -6,7 +6,10 @@ dict_ = Dictionary()
 
 def pos(word, url):
     tokens = tokenize_url(url)
-    return tokens.index(word) / (len(tokens) - 1)
+    p = tokens.index(word)
+    len_ = len(tokens) - 1
+
+    return 1 if len_ == 0 and p == 0 else tokens.index(word) / (len(tokens) - 1)
 
 
 def tokenize(word):
@@ -15,9 +18,11 @@ def tokenize(word):
     i = 0
     while i <= word_len - 3:
         token_len = word_len - i
-        pos_ = 45 if token_len > 45 else token_len  # the length of the longest english word is 45
+
+        # the length of the longest english word is 45
+        pos_ = 45 if token_len > 45 else token_len
         for j in range(pos_, 2, -1):
-            token = word[i:i+j]
+            token = word[i:(i + j)]
             if token in dict_:
                 tokens.append(token)
                 i += len(token) - 1
@@ -29,7 +34,8 @@ def tokenize(word):
 def special_char_ratio(word):
     len_ = 0
     for c in word.lower():
-        if not 'a' <= c <= 'z' and not '0' <= c <= '9' and c != '_' and c != '-':
+        if not 'a' <= c <= 'z' and not '0' <= c <= '9'\
+           and c != '_' and c != '-':
             len_ += 1
 
     return len_ / len(word)
