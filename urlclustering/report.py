@@ -22,7 +22,7 @@ def log_report(n_cluster, feature_names, clusters, report_dir="./reports"):
 
     with open(f'{report_dir}/clusters', "w") as detail:
         for i in range(len(clusters)):
-            print("=====================================================================================", file=detail)
-            print(f'group {str(i)}, amount: {str(len(clusters[i]))}', file=detail)
+            print(f'\ngroup {str(i)}, amount: {str(len(clusters[i]))}', file=detail)
             print("=====================================================================================", file=detail)
             print("\n".join(clusters[i]), file=detail)
+            print("=====================================================================================", file=detail)
