@@ -54,7 +54,8 @@ class Dictionary:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--add', dest='add', default=False, action='store_true', help='add word(s) to dictionary')
+    parser.add_argument('-a', '--add', dest='add', default=False, action='store_true',
+                        help='add word(s) to dictionary')
     parser.add_argument('word', nargs='+')
     args = parser.parse_args()
 

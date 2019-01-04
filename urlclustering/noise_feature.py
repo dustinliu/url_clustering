@@ -1,15 +1,27 @@
+from urllib.parse import urlparse
+
 from urlclustering.dictionary import Dictionary
-from urlclustering.utils import tokenize_url
 
 dict_ = Dictionary()
 
+
+def urls_preprocess(urls):
+    return list(set([urlparse(u).path for u in urls]))
+
+def tokenize_url(url, max_digital_ratio=1):
+    path = urlparse(url).path
+    if path[0] == '/':
+        path = path[1:]
+    if path[-1] == '/':
+        path = path[:-1]
+
+    return [word for word in path.split('/') if digit_ratio(word) <= max_digital_ratio]
 
 def pos(word, url):
     tokens = tokenize_url(url)
     p = tokens.index(word)
     len_ = len(tokens) - 1
-
-    return 1 if len_ == 0 and p == 0 else tokens.index(word) / (len(tokens) - 1)
+    return 0 if len_ == 0 and p == 0 else tokens.index(word) / (len(tokens) - 1)
 
 
 def tokenize(word):
@@ -32,6 +44,9 @@ def tokenize(word):
 
 
 def special_char_ratio(word):
+    if word is None or len(word) == 0:
+        return 0
+
     len_ = 0
     for c in word.lower():
         if not 'a' <= c <= 'z' and not '0' <= c <= '9'\

@@ -4,8 +4,7 @@ import time
 import argparse
 import pandas as pd
 
-from urlclustering.noise_feature import extract_features
-from urlclustering.utils import tokenize_url
+from urlclustering.noise_feature import extract_features, dict_, tokenize_url
 
 sample_feature_columes = ['position', 'length', 'readability', 'digital_ratio', 'special_ratio']
 sample_columns = ['word', 'url', 'frequency', 'amount'] + sample_feature_columes + ['label']
@@ -58,8 +57,15 @@ def process_raw_samples(inputfile, outputfile):
     write_sample(pd.DataFrame(samples, columns=sample_columns), outputfile)
 
 
+def add_extra_dict(dict_file):
+    for word in dict_file:
+        if len(word) > 1:
+            dict_.add(word.strip())
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--extra_dict', type=argparse.FileType('r'), help='user defined dictionary')
     parser.add_argument('inputfile', nargs='?', type=argparse.FileType('r'), default=sys.stdin,
                         help='input file name')
     parser.add_argument('outputfile', nargs='?', type=argparse.FileType('w'),
@@ -68,6 +74,8 @@ if __name__ == '__main__':
 
     start = time.time()
     try:
+        if args.extra_dict:
+            add_extra_dict(args.extra_dict)
         process_raw_samples(args.inputfile, args.outputfile)
     finally:
         args.inputfile.close()

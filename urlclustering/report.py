@@ -6,23 +6,22 @@ def log_report(n_cluster, feature_names, clusters, report_dir="./reports"):
         os.mkdir(report_dir)
 
     with open(f'{report_dir}/summary', "w") as summary:
-        summary.write(f'number of cluster: {n_cluster}\n\n')
+        print(f'number of cluster: {n_cluster}', file=summary)
 
         summary.write("features\n")
         summary.write("===========================================\n")
-        for word in feature_names:
-            summary.write(f'{word}\n')
-        summary.write("\n")
+        print(" ".join(feature_names), file=summary)
 
         summary.write("clusters\n")
         summary.write("===========================================\n")
-        for i in range(len(clusters)):
-            summary.write(f'cluster {i} ({len(clusters[i])})\t{random.choice(clusters[i])}')
-            summary.write("\n")
+        for group, cluster in clusters.items():
+            sample = 'None' if len(cluster) == 0 else random.choice(cluster)
+            print(f'cluster {group} ({len(cluster)})\t{sample}', file=summary)
+            print()
 
     with open(f'{report_dir}/clusters', "w") as detail:
-        for i in range(len(clusters)):
-            print("=====================================================================================", file=detail)
-            print(f'group {str(i)}, amount: {str(len(clusters[i]))}', file=detail)
-            print("=====================================================================================", file=detail)
-            print("\n".join(clusters[i]), file=detail)
+        for idx, cluster in clusters.items():
+            print(f'\ncluster {idx}, amount: {len(cluster)}', file=detail)
+            print("==================================================================", file=detail)
+            print("\n".join(cluster), file=detail)
+            print("==================================================================", file=detail)

@@ -55,7 +55,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('trainingfile', type=argparse.FileType('r'), default=sys.stdin,
                         help='training file name')
-    parser.add_argument('modelfile', type=argparse.FileType('wb'),
+    parser.add_argument('modelfile', nargs='?', type=argparse.FileType('wb'),
                         help='model file name')
     parser.add_argument('testfile', nargs='?', type=argparse.FileType('r'),
                         help='test file name')
@@ -92,9 +92,10 @@ if __name__ == '__main__':
     print(f'{"precision":<12} {precision}')
     print(f'{"recall":<12} {recall}')
 
-    yes_no = input('save the result?')
-    if yes_no.lower().startswith('y'):
-        detector.save(args.modelfile)
+    if args.modelfile:
+        yes_no = input('save the result?')
+        if yes_no.lower().startswith('y'):
+            detector.save(args.modelfile)
 
     # step_kwargs = ({'step': 'post'} if 'step' in signature(plt.fill_between).parameters else {})
     # plt.step(recall, precision, color='b', alpha=0.2, where='post')
