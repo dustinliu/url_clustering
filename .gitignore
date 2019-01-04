@@ -4,6 +4,8 @@ data/
 reports/
 .pytest_cache/
 .DS_Store
+*.sublime-project
+*.sublime-workspace
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

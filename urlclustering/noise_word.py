@@ -1,19 +1,23 @@
-import argparse
+# import pylab
+import pickle
 import sys
 from collections import Counter
 
+import argparse
 import numpy as np
-import pickle
 from imblearn.over_sampling import SMOTE
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score, precision_recall_curve
 from sklearn.model_selection import train_test_split
 
-from urlclustering.toolkit.noise_sample import read_sample
+from urlclustering.noise_sample import read_sample, sample_feature_columes
+
+
+# from sklearn.utils.fixes import signature
+# from matplotlib import pyplot as plt
 
 
 class NoiseWordDetector:
-    features_columes = ['position', 'length', 'readability', 'digital_ratio']
 
     def __init__(self, model_file=None):
         if model_file is None:
@@ -43,34 +47,37 @@ class NoiseWordDetector:
 
 
 def transform_feature(samples):
-    return np.array(samples[NoiseWordDetector.features_columes].values.tolist()),\
+    return np.array(samples[sample_feature_columes].values.tolist()), \
         np.array(samples['label'].values.tolist())
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('trainingfile', nargs='?', type=argparse.FileType('r'), default=sys.stdin,
+    parser.add_argument('trainingfile', type=argparse.FileType('r'), default=sys.stdin,
                         help='training file name')
-    parser.add_argument('testfile', nargs='?', type=argparse.FileType('r'), help='test file name')
+    parser.add_argument('modelfile', type=argparse.FileType('wb'),
+                        help='model file name')
+    parser.add_argument('testfile', nargs='?', type=argparse.FileType('r'),
+                        help='test file name')
     args = parser.parse_args()
 
     print('collecting training data')
     samples = read_sample(args.trainingfile)
-    X_train, y_train = transform_feature(samples)
+    X, y = transform_feature(samples)
 
-    print(f'Original dataset shape {Counter(y_train)}')
+    print(f'Original dataset shape {Counter(y)}')
     print('resampling by smote')
     sm = SMOTE(random_state=42)
-    X_res, y_res = sm.fit_resample(X_train, y_train)
-    print(f'resampled dataset shape {Counter(y_res)}')
+    X_train, y_train = sm.fit_resample(X, y)
+    print(f'resampled dataset shape {Counter(y_train)}')
 
     if args.testfile:
         print("collecting test data")
-        samples = read_sample(args.testfile)
-        X_test, y_test = transform_feature(samples)
+        samples_test = read_sample(args.testfile)
+        X_test, y_test = transform_feature(samples_test)
     else:
         print("no test data given, split from training data")
-        X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.25)
+        X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.25)
 
     print('training.....')
     detector = NoiseWordDetector()
@@ -81,9 +88,13 @@ if __name__ == '__main__':
     average_precision = average_precision_score(y_test, y_score)
     print(f'Average precision-recall score: {average_precision:0.2f}')
     precision, recall, threshold = precision_recall_curve(y_test, y_score)
-    print(f'precision\t\t{precision}')
-    print(f'recall\t\t{recall}')
-    print(f'threshold\t\t{recall}')
+    print(f'{"threshold":<12} {recall}')
+    print(f'{"precision":<12} {precision}')
+    print(f'{"recall":<12} {recall}')
+
+    yes_no = input('save the result?')
+    if yes_no.lower().startswith('y'):
+        detector.save(args.modelfile)
 
     # step_kwargs = ({'step': 'post'} if 'step' in signature(plt.fill_between).parameters else {})
     # plt.step(recall, precision, color='b', alpha=0.2, where='post')

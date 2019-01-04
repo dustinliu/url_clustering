@@ -52,11 +52,7 @@ def readability(word):
 
 
 def digit_ratio(word):
-    try:
-        if word is None or len(word) == 0:
-            return 0
-    except TypeError:
-        print(f'type error: {word}, type: {type(word)}')
+    if word is None or len(word) == 0:
         return 0
 
     digit_count = 0
@@ -68,4 +64,4 @@ def digit_ratio(word):
 
 def extract_features(word, url):
     word = word.lower()
-    return pos(word, url), len(word), readability(word), digit_ratio(word)
+    return pos(word, url), len(word), readability(word), digit_ratio(word), special_char_ratio(word)

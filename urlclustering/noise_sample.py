@@ -1,13 +1,14 @@
-import argparse
 import sys
 import time
 
+import argparse
 import pandas as pd
 
 from urlclustering.noise_feature import extract_features
 from urlclustering.utils import tokenize_url
 
-pd_columns = ['word', 'url', 'frequency', 'amount', 'position', 'length', 'readability', 'digital_ratio', 'label']
+sample_feature_columes = ['position', 'length', 'readability', 'digital_ratio', 'special_ratio']
+sample_columns = ['word', 'url', 'frequency', 'amount'] + sample_feature_columes + ['label']
 
 
 def write_sample(samples, file):
@@ -47,29 +48,22 @@ def process_raw_samples(inputfile, outputfile):
     for word in samples_dict.keys():
         value = samples_dict[word]
         feature = extract_features(word, value[0])
-        samples.append([word, value[0], value[1]/total, value[1],
-                        feature[0], feature[1], feature[2], feature[3], None])
+        samples.append([word, value[0], value[1] / total, value[1]] + list(feature) + [None])
         i += 1
         if i % 10000 == 0:
             print(f'extracting features, {i/data_len:.0%} complete', end='\r')
     print('extracting features, 100% complete')
 
     print("write samples to storage")
-    write_sample(pd.DataFrame(samples, columns=pd_columns), outputfile)
-
-
-def update_all_features(infile, outfile):
-    samples = read_sample(infile)
-    samples['feature'] = samples.apply(lambda row: extract_features(row['word'], row['url']), axis=1)
-    write_sample(samples, outfile)
+    write_sample(pd.DataFrame(samples, columns=sample_columns), outputfile)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('inputfile', nargs='?', type=argparse.FileType('r'), default=sys.stdin, help='input file name')
+    parser.add_argument('inputfile', nargs='?', type=argparse.FileType('r'), default=sys.stdin,
+                        help='input file name')
     parser.add_argument('outputfile', nargs='?', type=argparse.FileType('w'),
                         default=sys.stdout, help='output file name')
-
     args = parser.parse_args()
 
     start = time.time()
