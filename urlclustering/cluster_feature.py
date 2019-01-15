@@ -85,5 +85,5 @@ class FeatureCounter:
         score_array = [_word_score(word, _word_counter[idx]) for word, idx in items]
         score_array.append(self.len_weight)
 
-        return sample_urls, sp.csr_matrix(x).multiply(score_array)
+        return x.multiply(score_array)
 

@@ -39,6 +39,7 @@ class KmeanClustering:
 
         cluster_range = range(2, self.max_n_clusters)
         max_ch_score = 0
+        print('begian kmean clustreing......')
         with concurrent.futures.ProcessPoolExecutor() as executor:
             k_to_kmean_future = {k: executor.submit(self._kmean, X, k) for k in cluster_range}
 
