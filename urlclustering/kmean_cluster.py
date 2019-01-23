@@ -26,8 +26,8 @@ class KmeanClustering:
     def _kmean(self, observations, n_clusters):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=ConvergenceWarning)
-            result = cluster.MiniBatchKMeans(n_clusters=n_clusters, max_iter=self.max_iter,
-                                             batch_size=1000).fit(observations)
+            result = cluster.KMeans(n_clusters=n_clusters, max_iter=self.max_iter)\
+                .fit(observations)
         score = metrics.calinski_harabaz_score(observations.toarray(), result.labels_)
         return score, result
 

@@ -1,5 +1,4 @@
 import argparse
-import concurrent.futures
 from collections import defaultdict
 
 import numpy as np
@@ -19,9 +18,9 @@ class DbscanClustering:
 
     def _fit(self, x):
         print(f'dbscan clustering {x.shape[0]} samples')
-        db_ = cluster.DBSCAN(eps=50, min_samples=2).fit(x)
+        db_ = cluster.DBSCAN(eps=50, min_samples=2, n_jobs=-1).fit(x)
         # return n_clusters and labels
-        return len(set(self.labels)) - (1 if -1 in self.labels else 0), db_.labels_
+        return len(set(db_.labels_)) - (1 if -1 in db_.labels_ else 0), db_.labels_
 
     def fit(self, urls):
         print("collecting data...")
@@ -29,13 +28,15 @@ class DbscanClustering:
         x = feature_counter.fit(urls)
         self.features = feature_counter.words
 
+        self.n_clusters, self.labels = self._fit(x)
+
         # batch_pool = np.array_split(x.toarray(), int(x.shape[0]/self._batch_size))
-        batch_pool = self.slice_sample(x)
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            future_list = executor.map(self._fit, batch_pool)
+        # batch_pool = self.slice_sample(x)
+        # with concurrent.futures.ProcessPoolExecutor() as executor:
+        #     future_list = executor.map(self._fit, batch_pool)
 
         for idx, label in enumerate(self.labels):
-            self.clusters[label].append(x[idx])
+            self.clusters[label].append(urls[idx])
 
     def slice_sample(self, x):
         sample = []

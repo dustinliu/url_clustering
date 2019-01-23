@@ -15,17 +15,15 @@ def _lazy_tokenize_url(urls, max_digital_ratio):
 
 
 def _word_score(word, frequency):
-    digit_score = frequency * (1 - digit_ratio(word))
-    readability_score = frequency * readability(word)
-    special_char_score = frequency * (1 - special_char_ratio(word))
-    return int(digit_score + readability_score + special_char_score)
+    return np.math.pow(
+        int(readability(word) - special_char_ratio(word) - digit_ratio(word)) * frequency, 2
+    )
 
 
 class FeatureCounter:
-    def __init__(self, max_digital_ratio = 1, max_group_sampes = None):
+    def __init__(self, max_digital_ratio = 1):
         self.words = None
         self.max_digital_ratio = max_digital_ratio
-        self.max_group_samples = max_group_sampes
         self.len_weight = 1
 
     def _fit(self, urls):
@@ -40,7 +38,6 @@ class FeatureCounter:
     def fit(self, urls):
         self.len_weight = len(urls)
         print('number of raw data: ', self.len_weight)
-        # sample_urls = urls_preprocess(urls)
         sample_urls = urls
         total = len(sample_urls)
         print('number of sample data: ', total)
@@ -79,11 +76,11 @@ class FeatureCounter:
         url_len_array = sp.csr_matrix(np.reshape(np.array(url_len_array), (-1, 1)))
         x = sp.csr_matrix((values, indices, indptr), shape=(len(indptr) - 1, len(_vocabulary)))
 
-        x = sp.hstack([x, url_len_array])
+        print("calculating weight......")
+        x = sp.hstack([x, url_len_array], format='csr')
         items = sorted(_vocabulary.items(), key=lambda y: y[1])
         self.words = [item[0] for item in items]
         score_array = [_word_score(word, _word_counter[idx]) for word, idx in items]
         score_array.append(self.len_weight)
 
         return x.multiply(score_array)
-

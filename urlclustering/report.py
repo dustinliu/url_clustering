@@ -8,16 +8,15 @@ def log_report(n_cluster, feature_names, clusters, report_dir="./reports"):
     with open(f'{report_dir}/summary', "w") as summary:
         print(f'number of cluster: {n_cluster}', file=summary)
 
-        summary.write("features\n")
-        summary.write("===========================================\n")
+        print("features", file=summary)
+        print("===========================================", file=summary)
         print(" ".join(feature_names), file=summary)
 
-        summary.write("clusters\n")
-        summary.write("===========================================\n")
+        print("clusters", file=summary)
+        print("===========================================", file=summary)
         for group, cluster in clusters.items():
             sample = 'None' if len(cluster) == 0 else random.choice(cluster)
             print(f'cluster {group} ({len(cluster)})\t{sample}', file=summary)
-            print()
 
     with open(f'{report_dir}/clusters', "w") as detail:
         for idx, cluster in clusters.items():
