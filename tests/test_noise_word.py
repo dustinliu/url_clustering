@@ -1,6 +1,6 @@
 import pytest
 
-from tests.test_utils import compare_list
+from tests.utils import compare_list
 from urlclustering.noise_feature import pos, tokenize, readability, digit_ratio, special_char_ratio
 
 

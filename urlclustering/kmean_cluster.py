@@ -1,6 +1,6 @@
 import argparse
-import concurrent.futures
 import sys
+import time
 import warnings
 from collections import defaultdict
 
@@ -10,7 +10,7 @@ from sklearn.exceptions import ConvergenceWarning
 
 from urlclustering.cluster_feature import FeatureCounter
 from urlclustering.noise_feature import tokenize_url
-from urlclustering.report import log_report
+from urlclustering.util import log_report, elapsed_time
 
 
 class KmeanClustering:
@@ -32,6 +32,7 @@ class KmeanClustering:
         return score, result
 
     def fit(self, urls):
+        start_time = time.time()
         print("collection sample and featuring...")
         feature_counter = FeatureCounter()
         X = feature_counter.fit(urls)
@@ -40,25 +41,39 @@ class KmeanClustering:
         cluster_range = range(2, self.max_n_clusters)
         max_ch_score = 0
         print('begian kmean clustreing......')
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            k_to_kmean_future = {k: executor.submit(self._kmean, X, k) for k in cluster_range}
+        # with concurrent.futures.ProcessPoolExecutor() as executor:
+        #     k_to_kmean_future = {k: executor.submit(self._kmean, X, k) for k in cluster_range}
+        #
+        #     k_to_kmean = {}
+        #     for k in cluster_range:
+        #         ch_score, fit_result = k_to_kmean_future[k].result()
+        #         k_to_kmean[k] = fit_result
+        #         if ch_score > max_ch_score:
+        #             max_ch_score = ch_score
+        #             self.best_k = k
+        #
+        #         print(f'k: {k:<3} Calinski Harabaz score: {ch_score:<13.2f}', end='')
+        #         print(f' iterations: {fit_result.n_iter_}', flush=True)
 
-            k_to_kmean = {}
-            for k in cluster_range:
-                ch_score, fit_result = k_to_kmean_future[k].result()
-                k_to_kmean[k] = fit_result
-                if ch_score > max_ch_score:
-                    max_ch_score = ch_score
-                    self.best_k = k
+        k_to_kmean = {}
+        for k in cluster_range:
+            ch_score, fit_result = self._kmean(X, k)
+            k_to_kmean[k] = fit_result
+            if ch_score > max_ch_score:
+                max_ch_score = ch_score
+                self.best_k = k
 
-                print(f'k: {k:<3} Calinski Harabaz score: {ch_score:<13.2f}', end='')
-                print(f' iterations: {fit_result.n_iter_}', flush=True)
+            print(f'k: {k:<3} Calinski Harabaz score: {ch_score:<13.2f}', end='')
+            print(f' iterations: {fit_result.n_iter_}', flush=True)
 
         print("\nbest_k: ", self.best_k)
         self.kmean = k_to_kmean[self.best_k]
         self.clusters = defaultdict(list)
         for idx, label in enumerate(k_to_kmean[self.best_k].labels_):
             self.clusters[label].append(urls[idx])
+
+        print(f'total time spent: {elapsed_time(time.time() - start_time)}')
+
 
     def predict(self, url):
         len_, tokens = tokenize_url(url)

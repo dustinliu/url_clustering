@@ -1,0 +1,26 @@
+10000 samples
+========================================
+kmwan with all cpu
+- 0:01:01.147306
+
+dbscan with all cpu
+- 0:00:05.283860
+
+dbscan with one cpu
+- 0:00:02.666505
+
+
+100000 samples
+========================================
+kmwan with all cpu
+- crash because the python 3.6 bug, fixed in python 3.7
+
+dbscan with all cpu
+- 0:03:44.424756
+
+dbscan with one cpu
+- 0:04:03.877182
+
+4000000 samples
+========================================
+all memory error

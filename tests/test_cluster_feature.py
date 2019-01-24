@@ -1,7 +1,17 @@
 import numpy as np
 import pytest
+import pandas as pd
+import scipy.sparse as sp
 
 from urlclustering.cluster_feature import FeatureCounter, _word_score
+
+
+def test_word_score():
+    assert _word_score('v1', 2) == 1
+    assert _word_score('account', 2) == 4
+    assert _word_score('point', 1) == 2
+    assert _word_score('v2', 1) == 1
+    assert _word_score('ecid', 1) == 1
 
 
 @pytest.mark.parametrize("urls_input,expected", [
@@ -14,22 +24,12 @@ from urlclustering.cluster_feature import FeatureCounter, _word_score
     (['/v1/account/point',
       '/v1/account/ecid',
       '/v2/test/cuur'],
-     np.array([[3, 6, 3, 0, 0, 0, 0, 3 * FeatureCounter.len_weight],
-               [3, 6, 0, 2, 0, 0, 0, 3 * FeatureCounter.len_weight],
-               [0, 0, 0, 0, 1.5, 3, 2, 3 * FeatureCounter.len_weight]]))
+     [sp.csr_matrix([1, 4, 2, 0, 0, 0, 0, 3 * 3]),
+      sp.csr_matrix([1, 4, 0, 1, 0, 0, 0, 3 * 3]),
+      sp.csr_matrix([0, 0, 0, 0, 1, 2, 1, 3 * 3])])
 ])
-
-
 def test_fit(urls_input, expected):
+    dataSet = pd.DataFrame(urls_input, columns=['url'])
     counter = FeatureCounter()
-    X = counter.fit(urls_input)
-    print(X.toarray)
-    assert np.array_equal(X.toarray(), expected)
-
-def test_word_score():
-    counter = FeatureCounter()
-    assert _word_score('v1', 2) == 3
-    assert _word_score('account', 2) == 6
-    assert _word_score('point', 1) == 3
-    assert _word_score('v2', 1) == 1.5
-    assert _word_score('ecid', 1) == 2
+    counter.fit(dataSet)
+    assert dataSet['feature'].tolist() == expected

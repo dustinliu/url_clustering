@@ -1,11 +1,16 @@
 import argparse
+import concurrent.futures
+import os
+import time
 from collections import defaultdict
 
 import numpy as np
+import pandas as pd
 from sklearn import cluster
+import scipy.sparse as sp
 
 from urlclustering.cluster_feature import FeatureCounter
-from urlclustering.report import log_report
+from urlclustering.util import elapsed_time, ending_print, log_report, read_urls
 
 
 class DbscanClustering:
@@ -15,40 +20,61 @@ class DbscanClustering:
         self.labels = None
         self.clusters = defaultdict(list)
         self.features = None
+        self._iterations = 0
 
-    def _fit(self, x):
-        print(f'dbscan clustering {x.shape[0]} samples')
-        db_ = cluster.DBSCAN(eps=50, min_samples=2, n_jobs=-1).fit(x)
+    @staticmethod
+    def _fit(dataSet):
+        db_ = cluster.DBSCAN(eps=50, min_samples=2, n_jobs=1).fit(dataSet)
         # return n_clusters and labels
         return len(set(db_.labels_)) - (1 if -1 in db_.labels_ else 0), db_.labels_
 
-    def fit(self, urls):
+
+    def _split_fit(self, dataSet):
+        self._iterations, samples = self.slice_sample(dataSet)
+        n_jobs = os.cpu_count() if self._iterations > os.cpu_count() else self._iterations
+        print('begin dbscan.....')
+        with concurrent.futures.ProcessPoolExecutor(max_workers=n_jobs) as executor:
+            iter_ = 0
+            futures_ = {}
+            print(f'iteration {iter_} of {self._iterations} done', end='\r')
+            for sample in samples:
+                futures_[executor.submit(self._fit, sp.vstack(sample['feature'].tolist()))] = sample
+
+            for future_ in concurrent.futures.as_completed(futures_):
+                sample = futures_[future_]
+                sample.n_clusters, labels = future_.result()
+                sample['label'] = pd.Series(labels)
+
+                iter_ += 1
+                print(f'iteration {iter_} of {self._iterations} done', end='\r')
+
+    def fit(self, dataSet):
+        start_time = time.time()
         print("collecting data...")
         feature_counter = FeatureCounter()
-        x = feature_counter.fit(urls)
+        dataSet = feature_counter.fit(dataSet)
         self.features = feature_counter.words
 
-        self.n_clusters, self.labels = self._fit(x)
+        # self.n_clusters, self.labels = self._fit(x)
+        self._split_fit(dataSet)
+        ending_print(f'total time spent: {elapsed_time(time.time() - start_time)}')
 
-        # batch_pool = np.array_split(x.toarray(), int(x.shape[0]/self._batch_size))
-        # batch_pool = self.slice_sample(x)
-        # with concurrent.futures.ProcessPoolExecutor() as executor:
-        #     future_list = executor.map(self._fit, batch_pool)
+        # for idx, label in enumerate(self.labels):
+        #     self.clusters[label].append(urls[idx])
 
-        for idx, label in enumerate(self.labels):
-            self.clusters[label].append(urls[idx])
-
-    def slice_sample(self, x):
-        sample = []
-        size = x.shape[0]
+    def slice_sample(self, dataSet):
+        print('spliting data....')
+        samples = []
+        size = dataSet.shape[0]
         indices = np.arange(size)
-        indices = np.random.shuffle(indices)
-        shuffled_indices = np.array_split(indices, size/self._batch_size)
+        np.random.shuffle(indices)
+        iterations = int(size/self._batch_size)
+        shuffled_indices = np.array_split(indices, iterations)
 
         for index in shuffled_indices:
-            sample.append(x[index])
+            samples.append(dataSet.iloc[index.tolist()].reset_index(drop=True))
 
-        return sample
+        return iterations, samples
 
 
 if __name__ == "__main__":
@@ -57,11 +83,8 @@ if __name__ == "__main__":
     parser.add_argument('inputfile', nargs='?', type=argparse.FileType('r'), help='data file name')
     args = parser.parse_args()
 
-    lines = [line.strip() for line in args.inputfile.readlines()]
-
-    np.set_printoptions(threshold=np.nan)
-
+    dataSet = read_urls(args.inputfile)
     db = DbscanClustering(batch_size=args.b)
-    db.fit(lines)
+    db.fit(dataSet)
 
     log_report(db.n_clusters, db.features, db.clusters)
