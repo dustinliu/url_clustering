@@ -68,7 +68,7 @@ class KmeanClustering:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--max_clusters', type=int, default=20, help='user defined dictionary')
+    parser.add_argument('--max_clusters', type=int, default=20, help='max clusters')
     parser.add_argument('inputfile', nargs='?', type=argparse.FileType('r'), default=sys.stdin,
                         help='input file name')
     args = parser.parse_args()
